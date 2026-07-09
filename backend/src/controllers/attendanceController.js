@@ -26,6 +26,7 @@ const markLogin = async (req, res) => {
 };
 
 // @route POST /api/attendance/logout
+
 const markLogout = async (req, res) => {
   try {
     const employeeId = req.user._id;
@@ -35,9 +36,12 @@ const markLogout = async (req, res) => {
     if (!record || !record.loginTime)
       return res.status(400).json({ message: "No login record found for today" });
 
+    if (record.logoutTime)
+      return res.status(400).json({ message: "Already logged out for today" });
+
     record.logoutTime = new Date();
     const hours = (record.logoutTime - record.loginTime) / (1000 * 60 * 60);
-    record.workingHours = Math.round(hours * 100) / 100; // 2 decimal places
+    record.workingHours = Math.round(hours * 100) / 100;
 
     await record.save();
     res.json(record);

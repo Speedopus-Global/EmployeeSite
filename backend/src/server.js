@@ -20,7 +20,7 @@ app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 // Routes will be mounted here in later steps:
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/employees", require("./routes/employeeRoutes"));
-
+app.use("/api/attendance", require("./routes/attendanceRoutes"));
 
 
 const PORT = process.env.PORT || 5000;
