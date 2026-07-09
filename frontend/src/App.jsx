@@ -6,6 +6,7 @@ import Register from "@/pages/Register"
 import EmployeeDashboard from "@/pages/EmployeeDashboard"
 import ProtectedRoute from "@/routes/ProtectedRoutes"
 import AdminDashboard from "@/pages/AdminDashboard"
+import NotFound from "@/pages/NotFound"
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <AdminDashboard />
         </ProtectedRoute>
       } />
+      <Route path="*" element={<NotFound />} />
         </Routes>
        
       </BrowserRouter>
