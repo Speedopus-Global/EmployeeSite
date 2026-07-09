@@ -1,5 +1,5 @@
 
-const User = require("../models/User");
+const User = require("../models/user");
 
 // @route GET /api/employees        (all employees, admin only)
 const getEmployees = async (req, res) => {
