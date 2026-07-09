@@ -48,10 +48,17 @@ const loginUser = async (req, res) => {
 
 // @route POST /api/auth/logout
 const logoutUser = (req, res) => {
-  res.cookie("token", "", { httpOnly: true, expires: new Date(0) });
+  const isProd = process.env.NODE_ENV === "production";
+
+  res.cookie("token", "", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    expires: new Date(0),
+  });
+
   res.json({ message: "Logged out" });
 };
-
 // @route GET /api/auth/me
 const getMe = async (req, res) => {
   res.json({ user: req.user });
