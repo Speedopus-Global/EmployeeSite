@@ -6,6 +6,7 @@ const {
   approveDrawing,
   rejectDrawing,
   downloadDrawing,
+  viewDrawing,
 } = require("../controllers/drawingController");
 const { protect, adminOnly } = require("../middleware/auth");
 const upload = require("../middleware/upload");
@@ -18,5 +19,6 @@ router.get("/", protect, adminOnly, getAllDrawings);
 router.put("/:id/approve", protect, adminOnly, approveDrawing);
 router.put("/:id/reject", protect, adminOnly, rejectDrawing);
 router.get("/:id/download", protect, downloadDrawing);
+router.get("/:id/view", protect, viewDrawing);
 
 module.exports = router;

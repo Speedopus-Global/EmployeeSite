@@ -85,6 +85,19 @@ const downloadDrawing = async (req, res) => {
   res.download(path.resolve(drawing.filePath), drawing.originalName);
 };
 
+// @route GET /api/drawings/:id/view
+const viewDrawing = async (req, res) => {
+  const drawing = await Drawing.findById(req.params.id);
+  if (!drawing) return res.status(404).json({ message: "Drawing not found" });
+
+  if (req.user.role !== "admin" && drawing.employee.toString() !== req.user._id.toString())
+    return res.status(403).json({ message: "Not authorized to access this file" });
+
+  res.setHeader("Content-Disposition", `inline; filename="${drawing.originalName}"`);
+  res.setHeader("Content-Type", drawing.fileType);
+  res.sendFile(path.resolve(drawing.filePath));
+};
+
 module.exports = {
   uploadDrawing,
   getMyDrawings,
@@ -92,4 +105,5 @@ module.exports = {
   approveDrawing,
   rejectDrawing,
   downloadDrawing,
+  viewDrawing,
 };

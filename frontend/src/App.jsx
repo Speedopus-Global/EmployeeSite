@@ -5,7 +5,7 @@ import Login from "@/pages/Login"
 import Register from "@/pages/Register"
 import EmployeeDashboard from "@/pages/EmployeeDashboard"
 import ProtectedRoute from "@/routes/ProtectedRoutes"
-
+import AdminDashboard from "@/pages/AdminDashboard"
 
 function App() {
   return (
@@ -16,12 +16,18 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Login />} />
-         <Route path="/dashboard" element={
+          <Route path="/employee" element={
           <ProtectedRoute allowedRoles={["employee"]}>
             <EmployeeDashboard />
           </ProtectedRoute>
         } />
+         <Route path="/admin" element={
+        <ProtectedRoute allowedRoles={["admin"]}>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
         </Routes>
+       
       </BrowserRouter>
     </AuthProvider>
   )

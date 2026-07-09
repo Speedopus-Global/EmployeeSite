@@ -22,7 +22,7 @@ export default function Login() {
     try {
       const user = await login(email, password)
       toast.success("Logged in successfully")
-      navigate(user.role === "admin" ? "/admin" : "/dashboard")
+      navigate(user.role === "admin" ? "/admin" : "/employee")
     } catch (err) {
       toast.error(err.response?.data?.message || "Login failed")
     } finally {

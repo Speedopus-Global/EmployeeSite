@@ -12,6 +12,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table, TableHeader, TableRow, TableHead, TableBody, TableCell,
 } from "@/components/ui/table"
+import { Eye } from "lucide-react"
+
+const getViewUrl = (id) =>
+  `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/drawings/${id}/view`
 
 function statusVariant(status) {
   if (status === "approved") return "default"
@@ -106,6 +110,7 @@ export default function EmployeeDashboard() {
                     <TableHead>Drawing No.</TableHead>
                     <TableHead>Uploaded</TableHead>
                     <TableHead>Status</TableHead>
+                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -122,6 +127,15 @@ export default function EmployeeDashboard() {
                       <TableCell>
                         <Badge variant={statusVariant(d.status)}>{d.status}</Badge>
                       </TableCell>
+                       <TableCell className="text-right">
+                        <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => window.open(getViewUrl(d._id), "_blank")}
+                        >
+                        <Eye className="mr-1 h-4 w-4" /> View
+                        </Button>
+                    </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
