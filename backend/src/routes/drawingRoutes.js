@@ -9,7 +9,7 @@ const {
   viewDrawing,
 } = require("../controllers/drawingController");
 const { protect, adminOnly } = require("../middleware/auth");
-const upload = require("../middleware/upload");
+const upload = require("../middleware/Upload");
 
 const router = express.Router();
 
