@@ -1,4 +1,4 @@
-const Attendance = require("../models/Attendance");
+const Attendance = require("../models/attendance");
 
 const getTodayDateString = () => new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
 
