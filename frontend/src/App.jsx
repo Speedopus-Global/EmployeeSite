@@ -8,6 +8,9 @@ import ProtectedRoute from "@/routes/ProtectedRoutes"
 import AdminDashboard from "@/pages/AdminDashboard"
 import NotFound from "@/pages/NotFound"
 import VerifyEmail from "@/pages/VerifyEmail"
+import ForgotPassword from "@/pages/ForgotPassword"
+import ResetPassword from "@/pages/ResetPassword"
+
 
 function App() {
   return (
@@ -30,6 +33,8 @@ function App() {
       } />
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="*" element={<NotFound />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
        
       </BrowserRouter>

@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const generateToken = require("../utils/generateToken");
-const { sendAdminNewEmployeeAlert, sendOtpEmail } = require("../utils/emailService");
+const { sendAdminNewEmployeeAlert, sendOtpEmail, sendPasswordResetEmail} = require("../utils/emailService");
+const crypto = require("crypto");
 
 // @route POST /api/auth/register
 const registerUser = async (req, res) => {
@@ -114,6 +115,67 @@ const resendOtp = async (req, res) => {
   }
 };
 
+// @route POST /api/auth/forgot-password
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const user = await User.findOne({ email });
+    // Always respond the same way, whether the user exists or not —
+    // prevents leaking which emails are registered in the system
+    if (!user) {
+      return res.json({ message: "If that email is registered, a reset link has been sent." });
+    }
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+    await user.save();
+
+    const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
+    sendPasswordResetEmail(user, resetLink);
+
+    res.json({ message: "If that email is registered, a reset link has been sent." });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @route POST /api/auth/reset-password
+const resetPassword = async (req, res) => {
+  try {
+    const { email, token, newPassword } = req.body;
+    if (!email || !token || !newPassword)
+      return res.status(400).json({ message: "Email, token, and new password are required" });
+
+    if (newPassword.length < 6)
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      email,
+      resetPasswordToken: hashedToken,
+      resetPasswordExpiry: { $gt: new Date() },
+    });
+
+    if (!user)
+      return res.status(400).json({ message: "Invalid or expired reset link" });
+
+    user.password = newPassword; // pre("save") hook will hash it
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpiry = undefined;
+    await user.save();
+
+    res.json({ message: "Password reset successful. You can now log in." });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 
 const logoutUser = (req, res) => {
   const isProd = process.env.NODE_ENV === "production";
@@ -130,4 +192,4 @@ const getMe = async (req, res) => {
   res.json({ user: req.user });
 };
 
-module.exports = { registerUser, loginUser, logoutUser, getMe, verifyOtp , resendOtp };
+module.exports = { registerUser, loginUser, logoutUser, getMe, verifyOtp , resendOtp, forgotPassword , resetPassword };

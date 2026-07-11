@@ -110,4 +110,35 @@ const sendAdminNewDrawingAlert = async (drawing, employee) => {
   }
 };
 
-module.exports = { sendAdminNewEmployeeAlert, sendOtpEmail, sendAdminNewDrawingAlert };
+const sendPasswordResetEmail = async (user, resetLink) => {
+  try {
+    const body = `
+      <p style="font-size: 14px; color: #3f3f46; line-height: 1.6;">
+        Hi ${user.name},
+      </p>
+      <p style="font-size: 14px; color: #3f3f46; line-height: 1.6;">
+        We received a request to reset your SpeedOpus account password. Click the button below to choose a new password.
+      </p>
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="${resetLink}"
+           style="display: inline-block; background-color: ${BRAND_BLUE}; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 500;">
+          Reset Password
+        </a>
+      </div>
+      <p style="font-size: 13px; color: #a1a1aa; line-height: 1.6; text-align: center;">
+        This link expires in 30 minutes. If you didn't request this, you can safely ignore this email — your password will remain unchanged.
+      </p>
+    `;
+
+    await resend.emails.send({
+      from: FROM,
+      to: user.email,
+      subject: "Reset your SpeedOpus password",
+      html: wrapEmail("Reset Your Password", body),
+    });
+  } catch (err) {
+    console.error("Failed to send password reset email:", err.message);
+  }
+};
+
+module.exports = { sendAdminNewEmployeeAlert, sendOtpEmail, sendAdminNewDrawingAlert , sendPasswordResetEmail};
