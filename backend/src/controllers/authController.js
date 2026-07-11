@@ -86,6 +86,35 @@ const verifyOtp = async (req, res) => {
   }
 };
 
+// @route POST /api/auth/resend-otp
+const resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.isEmailVerified)
+      return res.status(400).json({ message: "Email already verified" });
+
+    if (user.status !== "active")
+      return res.status(403).json({ message: "Account not yet approved by admin" });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otp = otp;
+    user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    sendOtpEmail(user, otp); // fire-and-forget
+
+    res.json({ message: "A new OTP has been sent to your email" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
 const logoutUser = (req, res) => {
   const isProd = process.env.NODE_ENV === "production";
   res.cookie("token", "", {
@@ -101,4 +130,4 @@ const getMe = async (req, res) => {
   res.json({ user: req.user });
 };
 
-module.exports = { registerUser, loginUser, logoutUser, getMe, verifyOtp };
+module.exports = { registerUser, loginUser, logoutUser, getMe, verifyOtp , resendOtp };
