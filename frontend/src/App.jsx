@@ -7,6 +7,7 @@ import EmployeeDashboard from "@/pages/EmployeeDashboard"
 import ProtectedRoute from "@/routes/ProtectedRoutes"
 import AdminDashboard from "@/pages/AdminDashboard"
 import NotFound from "@/pages/NotFound"
+import VerifyEmail from "@/pages/VerifyEmail"
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <AdminDashboard />
         </ProtectedRoute>
       } />
+      <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="*" element={<NotFound />} />
         </Routes>
        

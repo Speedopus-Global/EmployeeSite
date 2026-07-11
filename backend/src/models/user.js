@@ -12,6 +12,9 @@ const userSchema = new mongoose.Schema(
       enum: ["pending", "active", "rejected", "deactivated"],
       default: "pending",
     },
+    isEmailVerified: { type: Boolean, default: false },
+    otp: { type: String },
+    otpExpiry: { type: Date },
   },
   { timestamps: true }
 );

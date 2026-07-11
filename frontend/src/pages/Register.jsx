@@ -36,7 +36,7 @@ export default function Register() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Create account</CardTitle>
-          <CardDescription>Register as a CWADMS employee</CardDescription>
+          <CardDescription>Register as a SpeedOpus employee</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

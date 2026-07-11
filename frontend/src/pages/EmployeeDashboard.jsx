@@ -69,7 +69,7 @@ export default function EmployeeDashboard() {
     <div className="min-h-screen bg-muted/30">
       <header className="flex items-center justify-between border-b bg-background px-6 py-4">
         <div>
-          <h1 className="text-lg font-semibold">CWADMS</h1>
+          <h1 className="text-lg font-semibold">SpeedOpus</h1>
           <p className="text-sm text-muted-foreground">Welcome, {user?.name}</p>
         </div>
         <div className="flex items-center gap-4">

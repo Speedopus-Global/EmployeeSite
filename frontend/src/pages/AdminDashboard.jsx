@@ -88,7 +88,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 px-6 py-4 backdrop-blur">
         <div>
-          <h1 className="text-lg font-semibold">CWADMS Admin</h1>
+          <h1 className="text-lg font-semibold">SpeedOpus Admin</h1>
           <p className="text-sm text-muted-foreground">Welcome, {user?.name}</p>
         </div>
         <div className="flex items-center gap-3">

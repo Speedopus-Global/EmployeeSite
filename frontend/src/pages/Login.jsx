@@ -24,18 +24,24 @@ export default function Login() {
       toast.success("Logged in successfully")
       navigate(user.role === "admin" ? "/admin" : "/employee")
     } catch (err) {
-      toast.error(err.response?.data?.message || "Login failed")
-    } finally {
-      setIsSubmitting(false)
+    const data = err.response?.data
+    if (data?.needsVerification) {
+      toast.error("Please verify your email first")
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`)
+    } else {
+      toast.error(data?.message || "Login failed")
     }
+  } finally {
+    setIsSubmitting(false)
   }
+}
 
   return (
     <div className="flex h-screen items-center justify-center bg-muted/40 px-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>Sign in to your CWADMS account</CardDescription>
+          <CardDescription>Sign in to your SpeedOpus account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

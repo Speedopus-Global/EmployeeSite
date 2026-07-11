@@ -1,5 +1,6 @@
 
 const User = require("../models/user");
+const { sendOtpEmail } = require("../utils/emailService");
 
 // @route GET /api/employees        (all employees, admin only)
 const getEmployees = async (req, res) => {
@@ -18,10 +19,17 @@ const approveEmployee = async (req, res) => {
   const employee = await User.findById(req.params.id);
   if (!employee) return res.status(404).json({ message: "Employee not found" });
 
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
   employee.status = "active";
+  employee.otp = otp;
+  employee.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
   await employee.save();
-  res.json({ message: "Employee approved", employee });
+
+  sendOtpEmail(employee, otp);
+
+  res.json({ message: "Employee approved. OTP sent for email verification.", employee });
 };
+
 
 // @route PUT /api/employees/:id/reject
 const rejectEmployee = async (req, res) => {
