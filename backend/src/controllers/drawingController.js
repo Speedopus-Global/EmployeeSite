@@ -1,4 +1,5 @@
 const Drawing = require("../models/Drawing");
+const { sendAdminNewDrawingAlert } = require("../utils/emailService");
 
 // @route POST /api/drawings
 // @desc Employee uploads a drawing
@@ -30,7 +31,7 @@ const uploadDrawing = async (req, res) => {
       fileUrl: req.file.path,
       publicId: req.file.filename,
     });
-
+    sendAdminNewDrawingAlert(drawing, req.user);
     res.status(201).json(drawing);
   } catch (err) {
    console.error("Upload error:", err.message);

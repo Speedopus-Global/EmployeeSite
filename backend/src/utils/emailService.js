@@ -14,11 +14,11 @@ const sendAdminNewEmployeeAlert = async (employee) => {
       <table role="presentation" width="100%" style="margin: 20px 0; border-collapse: collapse;">
         <tr>
           <td style="padding: 8px 0; font-size: 13px; color: #71717a; width: 100px;">Name</td>
-          <td style="padding: 8px 0; font-size: 13px; color: #18181b; font-weight: 500;">${employee.name}</td>
+          <td style="padding: 8px 0; font-size: 13px; color: ${BRAND_BLUE}; font-weight: 500;">${employee.name}</td>
         </tr>
         <tr>
           <td style="padding: 8px 0; font-size: 13px; color: #71717a;">Email</td>
-          <td style="padding: 8px 0; font-size: 13px; color: #18181b; font-weight: 500;">${employee.email}</td>
+          <td style="padding: 8px 0; font-size: 13px; color: ${BRAND_BLUE}; font-weight: 500;">${employee.email}</td>
         </tr>
       </table>
       <a href="${process.env.CLIENT_URL}/admin"
@@ -86,11 +86,11 @@ const sendAdminNewDrawingAlert = async (drawing, employee) => {
       <table role="presentation" width="100%" style="margin: 20px 0; border-collapse: collapse;">
         <tr>
           <td style="padding: 8px 0; font-size: 13px; color: #71717a; width: 120px;">Project</td>
-          <td style="padding: 8px 0; font-size: 13px; color: #18181b; font-weight: 500;">${drawing.projectName}</td>
+          <td style="padding: 8px 0; font-size: 13px; color: ${BRAND_BLUE}; font-weight: 500;">${drawing.projectName}</td>
         </tr>
         <tr>
           <td style="padding: 8px 0; font-size: 13px; color: #71717a;">Drawing No.</td>
-          <td style="padding: 8px 0; font-size: 13px; color: #18181b; font-weight: 500;">${drawing.drawingNumber}</td>
+          <td style="padding: 8px 0; font-size: 13px; color: ${BRAND_BLUE}; font-weight: 500;">${drawing.drawingNumber}</td>
         </tr>
       </table>
       <a href="${process.env.CLIENT_URL}/admin"

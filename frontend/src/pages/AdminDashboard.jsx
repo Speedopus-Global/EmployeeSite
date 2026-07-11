@@ -9,13 +9,18 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import EmployeesTab from "@/components/admin/EmployeesTab"
 import DrawingsTab from "@/components/admin/DrawingsTab"
 import NotificationBell from "@/components/admin/NotificationBell"
+import Logo from "@/components/Logo"
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, accent = false }) {
   return (
-    <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <Card
+      className={`transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+        accent ? "border-brand/30 bg-brand/[0.03]" : ""
+      }`}
+    >
       <CardContent className="pt-6">
         <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="text-3xl font-semibold">{value}</p>
+        <p className={`text-3xl font-semibold ${accent ? "text-brand" : ""}`}>{value}</p>
       </CardContent>
     </Card>
   )
@@ -87,9 +92,13 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 px-6 py-4 backdrop-blur">
-        <div>
-          <h1 className="text-lg font-semibold">SpeedOpus Admin</h1>
-          <p className="text-sm text-muted-foreground">Welcome, {user?.name}</p>
+        <div className="flex items-center gap-3">
+          <Logo size={36} />
+          <div className="h-6 w-px bg-border" />
+          <div>
+            <p className="text-sm font-medium leading-none">Admin</p>
+            <p className="mt-1 text-xs text-muted-foreground">{user?.name}</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <NotificationBell employees={employees} drawings={drawings} onGoTo={setActiveTab} />
@@ -100,22 +109,26 @@ export default function AdminDashboard() {
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard label="Total Employees" value={totalEmployees} />
-          <StatCard label="Pending Approvals" value={pendingApprovals} />
+          <StatCard label="Pending Approvals" value={pendingApprovals} accent={pendingApprovals > 0} />
           <StatCard label="Today's Uploads" value={todaysUploads} />
-          <StatCard label="Pending Drawing Approvals" value={pendingDrawings} />
+          <StatCard
+            label="Pending Drawing Approvals"
+            value={pendingDrawings}
+            accent={pendingDrawings > 0}
+          />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
           <TabsList className="h-11 rounded-full bg-muted p-1">
             <TabsTrigger
               value="employees"
-              className="rounded-full transition-all duration-200 data-[state=active]:shadow-sm"
+              className="rounded-full transition-all duration-200 data-[state=active]:bg-brand data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               Employees
             </TabsTrigger>
             <TabsTrigger
               value="drawings"
-              className="rounded-full transition-all duration-200 data-[state=active]:shadow-sm"
+              className="rounded-full transition-all duration-200 data-[state=active]:bg-brand data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               Drawings
             </TabsTrigger>
