@@ -10,6 +10,7 @@ import EmployeesTab from "@/components/admin/EmployeesTab"
 import DrawingsTab from "@/components/admin/DrawingsTab"
 import NotificationBell from "@/components/admin/NotificationBell"
 import Logo from "@/components/Logo"
+import AttendanceTab from "@/components/admin/AttendanceTab"
 
 function StatCard({ label, value, accent = false }) {
   return (
@@ -132,6 +133,9 @@ export default function AdminDashboard() {
             >
               Drawings
             </TabsTrigger>
+              <TabsTrigger value="attendance" className="rounded-full transition-all duration-200 data-[state=active]:bg-brand data-[state=active]:text-white data-[state=active]:shadow-sm">
+              Attendance
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent
@@ -152,6 +156,13 @@ export default function AdminDashboard() {
           >
             <DrawingsTab drawings={drawings} loading={loading} onRefresh={fetchAll} />
           </TabsContent>
+          <TabsContent value="attendance" className="animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
+            <AttendanceTab
+              attendance={attendanceToday}
+              employees={employees}
+              loading={loading}
+            />
+        </TabsContent>
         </Tabs>
       </main>
     </div>
