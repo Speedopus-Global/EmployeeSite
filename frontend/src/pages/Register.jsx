@@ -5,12 +5,13 @@ import { useAuth } from "@/context/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
-} from "@/components/ui/card"
+import Logo from "@/components/Logo"
+import { Users, ClipboardCheck, Mail, Eye, EyeOff } from "lucide-react"
 
 export default function Register() {
-  const [form, setForm] = useState({ name: "", email: "", password: "" })
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" })
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { register } = useAuth()
   const navigate = useNavigate()
@@ -19,6 +20,12 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    if (form.password !== form.confirmPassword) {
+      toast.error("Passwords do not match")
+      return
+    }
+
     setIsSubmitting(true)
     try {
       await register(form.name, form.email, form.password)
@@ -32,55 +39,123 @@ export default function Register() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center bg-muted/40 px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Create account</CardTitle>
-          <CardDescription>Register as a SpeedOpus employee</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full name</Label>
-              <Input id="name" name="name" value={form.name} onChange={handleChange} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                minLength={6}
-                value={form.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating account..." : "Register"}
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link to="/login" className="text-primary underline">
-                Login
-              </Link>
+    <div className="flex min-h-screen flex-col bg-muted/30">
+      <header className="border-b bg-background px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center gap-3">
+          <Logo size={32} showText={false} />
+          <div className="h-6 w-px bg-border" />
+          <div>
+            <p className="text-sm font-semibold leading-none">SpeedOpus Global</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Employee Site</p>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex flex-1">
+        <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-[#0a0a12] px-14 py-16 lg:flex">
+          <div className="relative">
+            <Logo size={40} showText={false} />
+          </div>
+
+          <div className="relative space-y-6">
+            <h2 className="max-w-md text-3xl font-semibold leading-tight text-white">
+              Join the team. Start your journey with SpeedOpus.
+            </h2>
+            <p className="max-w-sm text-sm leading-relaxed text-white/60">
+              Create your employee account to track attendance, submit work for review, and
+              stay connected with the rest of the team.
             </p>
-          </CardFooter>
-        </form>
-      </Card>
+
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center gap-3 text-sm text-white/70">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
+                  <Users className="h-4 w-4 text-brand" />
+                </div>
+                Quick, admin-approved onboarding
+              </div>
+              <div className="flex items-center gap-3 text-sm text-white/70">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
+                  <Mail className="h-4 w-4 text-brand" />
+                </div>
+                Secure email verification
+              </div>
+              <div className="flex items-center gap-3 text-sm text-white/70">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
+                  <ClipboardCheck className="h-4 w-4 text-brand" />
+                </div>
+                Guided profile setup on first login
+              </div>
+            </div>
+          </div>
+
+          <p className="relative text-xs text-white/30">
+            &copy; {new Date().getFullYear()} SpeedOpus Global. All rights reserved.
+          </p>
+        </div>
+
+        <div className="flex flex-1 items-center justify-center px-4 py-12">
+          <div className="w-full max-w-sm">
+            <div className="mb-8 flex flex-col items-center text-center lg:hidden">
+              <Logo size={48} showText={false} />
+            </div>
+
+            <div className="mb-8 text-center">
+              <h1 className="text-2xl font-semibold tracking-tight">SpeedOpus Global</h1>
+              <p className="mt-1 text-sm text-muted-foreground">Create your employee account</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full name</Label>
+                <Input id="name" name="name" placeholder="Your full name" value={form.name} onChange={handleChange} required />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email address</Label>
+                <Input id="email" name="email" type="email" placeholder="you@speedopus.com" value={form.email} onChange={handleChange} required />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input id="password" name="password" type={showPassword ? "text" : "password"} minLength={6} placeholder="At least 6 characters" value={form.password} onChange={handleChange} className="pr-10" required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-3 flex items-center text-muted-foreground">
+                    {showPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password" value={form.confirmPassword} onChange={handleChange} className="pr-10" required />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-3 flex items-center text-muted-foreground">
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                  </button>
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full bg-brand hover:bg-brand/90" disabled={isSubmitting}>
+                {isSubmitting ? "Creating account..." : "Create account"}
+              </Button>
+            </form>
+
+            <div className="mt-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">Already registered</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            <Button asChild variant="outline" className="mt-6 w-full">
+              <Link to="/login">Sign in instead</Link>
+            </Button>
+
+            <p className="mt-8 text-center text-xs text-muted-foreground">
+              Your account will need admin approval and email verification before you can log in.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
