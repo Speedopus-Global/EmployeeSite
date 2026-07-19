@@ -1,164 +1,138 @@
-import { useState, useEffect, useCallback } from "react"
-import { toast } from "sonner"
-import api from "@/lib/axios"
-import { useAuth } from "@/context/AuthContext"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import AttendanceButton from "@/components/AttendanceButton"
-import UploadDrawingDialog from "@/components/UploadDrawingDialog"
+import { useAuth } from "@/context/AuthContext"
 import Logo from "@/components/Logo"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import DashboardTab from "@/components/employee/DashboardTab"
+import AttendanceTab from "@/components/employee/employee-AttendanceTab"
+import ProfileTab from "@/components/employee/ProfileTab"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Table, TableHeader, TableRow, TableHead, TableBody, TableCell,
-} from "@/components/ui/table"
-import { Eye } from "lucide-react"
+import { LayoutGrid, Clock, UserRound, LogOut, Menu, X } from "lucide-react"
 
-const getViewUrl = (id) =>
-  `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/drawings/${id}/view`
-
-function statusVariant(status) {
-  if (status === "approved") return "default"
-  if (status === "rejected") return "destructive"
-  return "secondary"
-}
-
-function StatCard({ label, value, accent = false }) {
-  return (
-    <Card
-      className={`transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-        accent ? "border-brand/30 bg-brand/[0.03]" : ""
-      }`}
-    >
-      <CardContent className="pt-6">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className={`text-3xl font-semibold ${accent ? "text-brand" : ""}`}>{value}</p>
-      </CardContent>
-    </Card>
-  )
-}
+const NAV_ITEMS = [
+  { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
+  { id: "attendance", label: "My Attendance", icon: Clock },
+  { id: "profile", label: "Profile", icon: UserRound },
+]
 
 export default function EmployeeDashboard() {
-  const [drawings, setDrawings] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("dashboard")
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-
-  const fetchDrawings = useCallback(async () => {
-    try {
-      const res = await api.get("/drawings/me")
-      setDrawings(res.data)
-    } catch (err) {
-      toast.error("Failed to load your uploads")
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchDrawings()
-  }, [fetchDrawings])
 
   const handleLogout = async () => {
     await logout()
     navigate("/login")
   }
 
-  const total = drawings.length
-  const pending = drawings.filter((d) => d.status === "pending").length
-  const approved = drawings.filter((d) => d.status === "approved").length
-  const rejected = drawings.filter((d) => d.status === "rejected").length
+  const initials = (user?.name || "")
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase()
 
-  return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 px-6 py-4 backdrop-blur">
-        <div className="flex items-center gap-3">
-          <Logo size={36} />
-          <div className="h-6 w-px bg-border" />
-          <div>
-            <p className="text-sm font-medium leading-none">Employee</p>
-            <p className="mt-1 text-xs text-muted-foreground">{user?.name}</p>
+  const SidebarContent = (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center gap-3 px-5 py-5">
+        <Logo size={32} showText={false} />
+        <div>
+          <p className="text-sm font-semibold leading-none">SpeedOpus</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Employee</p>
+        </div>
+      </div>
+
+      <nav className="flex-1 space-y-1 px-3 py-2">
+        {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => {
+              setActiveTab(id)
+              setMobileNavOpen(false)
+            }}
+            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              activeTab === id
+                ? "bg-brand text-white"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      <div className="border-t px-3 py-4">
+        <div className="mb-3 flex items-center gap-3 rounded-lg px-2 py-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold text-brand">
+            {initials || "U"}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium leading-none">{user?.name}</p>
+            <p className="mt-1 truncate text-xs text-muted-foreground">{user?.email}</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <AttendanceButton />
-          <Button variant="outline" onClick={handleLogout}>Logout</Button>
-        </div>
-      </header>
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-2"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </Button>
+      </div>
+    </div>
+  )
 
-      <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <StatCard label="Total Uploads" value={total} />
-          <StatCard label="Pending" value={pending} accent={pending > 0} />
-          <StatCard label="Approved" value={approved} />
-          <StatCard label="Rejected" value={rejected} />
-        </div>
+  return (
+    <div className="flex min-h-screen bg-muted/30">
+      {/* Desktop sidebar */}
+      <aside className="hidden w-64 shrink-0 border-r bg-background lg:block">
+        {SidebarContent}
+      </aside>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>My Drawings</CardTitle>
-            <UploadDrawingDialog onUploaded={fetchDrawings} />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            ) : drawings.length === 0 ? (
-              <p className="py-8 text-center text-muted-foreground">
-                No drawings uploaded yet.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Drawing No.</TableHead>
-                    <TableHead>Uploaded</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {drawings.map((d) => (
-                    <TableRow key={d._id}>
-                      <TableCell>{d.projectName}</TableCell>
-                      <TableCell>{d.drawingNumber}</TableCell>
-                      <TableCell>
-                        {new Date(d.createdAt).toLocaleString([], {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={statusVariant(d.status)}
-                          className={d.status === "approved" ? "bg-brand hover:bg-brand" : ""}
-                        >
-                          {d.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="hover:text-brand"
-                          onClick={() => window.open(getViewUrl(d._id), "_blank")}
-                        >
-                          <Eye className="mr-1 h-4 w-4" /> View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </main>
+      {/* Mobile sidebar overlay */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setMobileNavOpen(false)}
+          />
+          <aside className="absolute left-0 top-0 h-full w-64 bg-background shadow-xl">
+            {SidebarContent}
+          </aside>
+        </div>
+      )}
+
+      {/* Main content */}
+      <div className="flex flex-1 flex-col">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 px-6 py-4 backdrop-blur lg:hidden">
+          <div className="flex items-center gap-3">
+            <Logo size={28} showText={false} />
+            <span className="text-sm font-semibold">SpeedOpus</span>
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => setMobileNavOpen(true)}>
+            <Menu className="h-5 w-5" />
+          </Button>
+        </header>
+
+        <main className="mx-auto w-full max-w-6xl flex-1 space-y-6 p-6">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">
+              {NAV_ITEMS.find((n) => n.id === activeTab)?.label}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {activeTab === "dashboard" && "Overview of your drawings and activity"}
+              {activeTab === "attendance" && "Your logged hours and attendance history"}
+              {activeTab === "profile" && "Manage your personal information"}
+            </p>
+          </div>
+
+          {activeTab === "dashboard" && <DashboardTab />}
+          {activeTab === "attendance" && <AttendanceTab />}
+          {activeTab === "profile" && <ProfileTab />}
+        </main>
+      </div>
     </div>
   )
 }
