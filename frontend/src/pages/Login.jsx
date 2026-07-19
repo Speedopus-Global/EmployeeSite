@@ -22,7 +22,11 @@ export default function Login() {
     try {
       const user = await login(email, password)
       toast.success("Logged in successfully")
-      navigate(user.role === "admin" ? "/admin" : "/employee")
+      if (user.role === "employee" && !user.isProfileComplete) {
+      navigate("/complete-profile")
+    } else {
+      navigate(user.role === "admin" ? "/admin" : "/dashboard")
+    }
     } catch (err) {
     const data = err.response?.data
     if (data?.needsVerification) {

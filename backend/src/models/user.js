@@ -17,6 +17,10 @@ const userSchema = new mongoose.Schema(
     otpExpiry: { type: Date },
     resetPasswordToken : { type: String },
     resetPasswordExpiry : { type: Date },
+    phone: { type: String },
+    address: { type: String },
+    profilePicture: { type: String }, // Cloudinary URL
+    isProfileComplete: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
