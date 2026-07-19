@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import api from "@/lib/axios"
+import { useAuth } from "@/context/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
-import { Camera, Mail, Phone, Lock } from "lucide-react"
+import { Camera, Mail, Phone, Lock, X } from "lucide-react"
 
 export default function ProfileTab() {
   const [profile, setProfile] = useState(null)
@@ -17,6 +18,8 @@ export default function ProfileTab() {
   const [address, setAddress] = useState("")
   const [picture, setPicture] = useState(null)
   const [preview, setPreview] = useState(null)
+  const [markedForRemoval, setMarkedForRemoval] = useState(false)
+  const { refreshUser } = useAuth()
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -38,13 +41,24 @@ export default function ProfileTab() {
     if (!file) return
     setPicture(file)
     setPreview(URL.createObjectURL(file))
+    setMarkedForRemoval(false)
+  }
+
+  const handleRemovePicture = () => {
+    setPicture(null)
+    setPreview(null)
+    setMarkedForRemoval(true)
   }
 
   const handleSave = async (e) => {
     e.preventDefault()
     const formData = new FormData()
     formData.append("address", address)
-    if (picture) formData.append("profilePicture", picture)
+    if (markedForRemoval) {
+      formData.append("removePicture", "true")
+    } else if (picture) {
+      formData.append("profilePicture", picture)
+    }
 
     setSaving(true)
     try {
@@ -54,6 +68,8 @@ export default function ProfileTab() {
       setProfile(res.data.user)
       setPicture(null)
       setPreview(null)
+      setMarkedForRemoval(false)
+      await refreshUser() // keeps sidebar avatar/name in sync immediately
       toast.success("Profile updated")
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update profile")
@@ -78,7 +94,8 @@ export default function ProfileTab() {
     )
   }
 
-  const avatarSrc = preview || profile?.profilePicture
+  const avatarSrc = preview || (markedForRemoval ? null : profile?.profilePicture)
+  const hasPhoto = Boolean(avatarSrc)
 
   return (
     <div className="space-y-6">
@@ -89,7 +106,7 @@ export default function ProfileTab() {
           <div className="-mt-10 flex items-end gap-4">
             <div className="relative">
               <div className="h-20 w-20 overflow-hidden rounded-full border-4 border-background bg-muted shadow-sm">
-                {avatarSrc ? (
+                {hasPhoto ? (
                   <img src={avatarSrc} alt={profile?.name} className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-brand/10 text-lg font-semibold text-brand">
@@ -107,7 +124,7 @@ export default function ProfileTab() {
                 />
               </label>
             </div>
-            <div className="pb-1">
+            <div className="flex-1 pb-1">
               <h2 className="text-lg font-semibold leading-tight">{profile?.name}</h2>
               <div className="mt-1 flex items-center gap-2">
                 <Badge variant="secondary" className="text-xs font-normal capitalize">
@@ -121,6 +138,18 @@ export default function ProfileTab() {
                 </Badge>
               </div>
             </div>
+            {hasPhoto && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mb-1 gap-1.5 text-muted-foreground hover:text-destructive"
+                onClick={handleRemovePicture}
+              >
+                <X className="h-3.5 w-3.5" />
+                Remove photo
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

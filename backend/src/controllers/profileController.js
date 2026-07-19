@@ -25,13 +25,19 @@ const completeProfile = async (req, res) => {
 };
 
 // @route PUT /api/profile/update   (address + picture only, ever)
+// @route PUT /api/profile/update   (address + picture only, ever)
 const updateProfile = async (req, res) => {
   try {
-    const { address } = req.body;
+    const { address, removePicture } = req.body;
     const user = await User.findById(req.user._id);
 
     if (address !== undefined) user.address = address;
-    if (req.file) user.profilePicture = req.file.path;
+
+    if (removePicture === "true") {
+      user.profilePicture = "";
+    } else if (req.file) {
+      user.profilePicture = req.file.path;
+    }
 
     await user.save();
     res.json({ message: "Profile updated", user });

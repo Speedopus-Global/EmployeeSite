@@ -64,14 +64,20 @@ export default function EmployeeDashboard() {
 
       <div className="border-t px-3 py-4">
         <div className="mb-3 flex items-center gap-3 rounded-lg px-2 py-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold text-brand">
-            {initials || "U"}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium leading-none">{user?.name}</p>
-            <p className="mt-1 truncate text-xs text-muted-foreground">{user?.email}</p>
-          </div>
+        <div className="h-9 w-9 overflow-hidden rounded-full bg-brand/10">
+          {user?.profilePicture ? (
+            <img src={user.profilePicture} alt={user.name} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-brand">
+              {initials || "U"}
+            </div>
+          )}
         </div>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium leading-none">{user?.name}</p>
+          <p className="mt-1 truncate text-xs text-muted-foreground">{user?.email}</p>
+        </div>
+      </div>
         <Button
           variant="outline"
           className="w-full justify-start gap-2"
