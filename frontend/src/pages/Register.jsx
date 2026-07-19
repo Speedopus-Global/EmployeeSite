@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState , useRef} from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { toast } from "sonner"
 import { useAuth } from "@/context/AuthContext"
@@ -13,6 +13,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const logoRef = useRef(null)
   const { register } = useAuth()
   const navigate = useNavigate()
 
@@ -38,24 +39,70 @@ export default function Register() {
     }
   }
 
+  const handleMouseMove = (e) => {
+  const rect = e.currentTarget.getBoundingClientRect()
+
+  const x = e.clientX - rect.left
+  const y = e.clientY - rect.top
+
+  const rotateY = ((x - rect.width / 2) / rect.width) * 20
+  const rotateX = ((rect.height / 2 - y) / rect.height) * 20
+
+  if (logoRef.current) {
+    logoRef.current.style.transform = `
+      perspective(700px)
+      rotateX(${rotateX}deg)
+      rotateY(${rotateY}deg)
+      translateZ(15px)
+      scale(1.08)
+    `
+  }
+}
+
+const handleMouseLeave = () => {
+  if (logoRef.current) {
+    logoRef.current.style.transform =
+      "perspective(700px) rotateX(0deg) rotateY(0deg) translateZ(0) scale(1)"
+  }
+}
+
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
-      <header className="border-b bg-background px-6 py-4">
-        <div className="mx-auto flex max-w-6xl items-center gap-3">
-          <Logo size={32} showText={false} />
-          <div className="h-6 w-px bg-border" />
-          <div>
-            <p className="text-sm font-semibold leading-none">SpeedOpus Global</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Employee Site</p>
-          </div>
-        </div>
-      </header>
+    <div className="flex min-h-screen  bg-muted/30">
 
       <div className="flex flex-1">
         <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-[#0a0a12] px-14 py-16 lg:flex">
-          <div className="relative">
-            <Logo size={40} showText={false} />
+          <div className="group flex items-center gap-5 cursor-pointer select-none">
+          <div
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            className="flex items-center justify-center"
+          >
+            <div
+              ref={logoRef}
+              className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl transition-all duration-200 ease-out will-change-transform"
+            >
+              <Logo size={90} showText={false} />
+            </div>
           </div>
+
+          <div className="transition-all duration-500 group-hover:translate-x-2">
+            <h1 className="text-6xl font-extrabold tracking-tight text-white transition-all duration-500 group-hover:text-brand">
+              SpeedOpus
+            </h1>
+
+            <div className="flex items-center gap-3">
+              <div className="h-[2px] w-16 rounded-full bg-brand transition-all duration-500 group-hover:w-28" />
+
+              <p className="text-lg font-medium uppercase tracking-[0.25em] text-white/70">
+                GLOBAL
+              </p>
+            </div>
+
+            <p className="mt-2 text-base text-white/50">
+              Employee Portal
+            </p>
+          </div>
+        </div>
 
           <div className="relative space-y-6">
             <h2 className="max-w-md text-3xl font-semibold leading-tight text-white">
@@ -94,14 +141,21 @@ export default function Register() {
         </div>
 
         <div className="flex flex-1 items-center justify-center px-4 py-12">
-          <div className="w-full max-w-sm">
-            <div className="mb-8 flex flex-col items-center text-center lg:hidden">
-              <Logo size={48} showText={false} />
+          <div className="w-full max-w-sm rounded-3xl border bg-background p-8 shadow-xl">
+            <div className="mb-8 flex flex-col items-center lg:hidden">
+              <div className="rounded-full p-5 shadow-xl ring-1 ring-slate-500">
+                <Logo size={70} showText={false} />
+              </div>
             </div>
 
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-semibold tracking-tight">SpeedOpus Global</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Create your employee account</p>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Create your account
+              </h1>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                Join the SpeedOpus team
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">

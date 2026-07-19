@@ -176,7 +176,14 @@ const handleMouseLeave = () => {
       </div>
 
       <div className="flex flex-1 items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-sm rounded-3xl border bg-background p-8 shadow-xl">
+                    <div className="mb-8 flex flex-col items-center lg:hidden">
+                      <div className="rounded-full p-5 shadow-xl ring-1 ring-slate-500">
+                        <Logo size={70} showText={false} />
+                      </div>
+                    </div>
+        
+
           <div className="mb-8 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">
               Welcome Back
