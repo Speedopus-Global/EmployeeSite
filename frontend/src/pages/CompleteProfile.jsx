@@ -124,7 +124,7 @@ export default function CompleteProfile() {
               </div>
             )}
 
-            {/* STEP 2 — Profile form */}
+            {/* STEP 2 — Profile form completion*/}
             {step === "profile" && (
               <form
                 onSubmit={handleSaveProfile}
