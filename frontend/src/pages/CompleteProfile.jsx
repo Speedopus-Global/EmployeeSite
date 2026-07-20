@@ -111,6 +111,16 @@ export default function CompleteProfile() {
                 <Button className="w-full bg-brand hover:bg-brand/90" onClick={() => setStepIndex(1)}>
                   Let's get started <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
+                 <Button
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={() => {
+                    sessionStorage.setItem("profileSetupSkipped", "true")
+                    navigate("/employee")
+                  }}
+                >
+                  Set up later
+                </Button>
               </div>
             )}
 

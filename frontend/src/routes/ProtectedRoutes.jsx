@@ -18,7 +18,7 @@ export default function ProtectedRoute({ children, allowedRoles, skipProfileChec
     return <Navigate to="/login" replace />
   }
 
-  if (!skipProfileCheck && user.role === "employee" && !user.isProfileComplete) {
+  if (!skipProfileCheck && user.role === "employee" && !user.isProfileComplete && !sessionStorage.getItem("profileSetupSkipped")) {
     return <Navigate to="/complete-profile" replace />
   }
 
