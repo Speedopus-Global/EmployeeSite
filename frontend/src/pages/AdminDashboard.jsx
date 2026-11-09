@@ -7,10 +7,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import EmployeesTab from "@/components/admin/EmployeesTab"
-import DrawingsTab from "@/components/admin/DrawingsTab"
 import NotificationBell from "@/components/admin/NotificationBell"
 import Logo from "@/components/Logo"
 import AttendanceTab from "@/components/admin/AttendanceTab"
+import LeaveTab from "@/components/admin/LeaveTab"
 
 function StatCard({ label, value, accent = false }) {
   return (
@@ -29,40 +29,41 @@ function StatCard({ label, value, accent = false }) {
 
 export default function AdminDashboard() {
   const [employees, setEmployees] = useState([])
-  const [drawings, setDrawings] = useState([])
   const [attendanceToday, setAttendanceToday] = useState([])
+  const [leaves, setLeaves] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("employees")
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
   const seenEmployeeIds = useRef(new Set())
-  const seenDrawingIds = useRef(new Set())
+  const seenLeaveIds = useRef(new Set())
   const isFirstLoad = useRef(true)
 
   const fetchAll = useCallback(async () => {
     try {
-      const [empRes, drawRes, attRes] = await Promise.all([
+      const [empRes, attRes, leaveRes] = await Promise.all([
         api.get("/employees"),
-        api.get("/drawings"),
         api.get("/attendance/all"),
+        api.get("/leaves"),
       ])
       setEmployees(empRes.data)
-      setDrawings(drawRes.data)
       setAttendanceToday(attRes.data)
+      setLeaves(leaveRes.data)
 
       const pendingEmp = empRes.data.filter((e) => e.status === "pending")
-      const pendingDraw = drawRes.data.filter((d) => d.status === "pending")
+      const pendingLeaves = leaveRes.data.filter((leave) => leave.status === "pending")
 
       if (!isFirstLoad.current) {
         const newEmp = pendingEmp.filter((e) => !seenEmployeeIds.current.has(e._id))
-        const newDraw = pendingDraw.filter((d) => !seenDrawingIds.current.has(d._id))
         newEmp.forEach((e) => toast.info(`New registration: ${e.name}`))
-        newDraw.forEach((d) => toast.info(`New drawing from ${d.employee?.name}: ${d.projectName}`))
+        pendingLeaves
+          .filter((leave) => !seenLeaveIds.current.has(leave._id))
+          .forEach((leave) => toast.info(`New leave request from ${leave.employee?.name}`))
       }
 
       seenEmployeeIds.current = new Set(pendingEmp.map((e) => e._id))
-      seenDrawingIds.current = new Set(pendingDraw.map((d) => d._id))
+      seenLeaveIds.current = new Set(pendingLeaves.map((leave) => leave._id))
       isFirstLoad.current = false
     } catch (err) {
       toast.error("Failed to load dashboard data")
@@ -82,13 +83,19 @@ export default function AdminDashboard() {
     navigate("/login")
   }
 
-  const todayStr = new Date().toISOString().split("T")[0]
   const totalEmployees = employees.length
   const pendingApprovals = employees.filter((e) => e.status === "pending").length
-  const todaysUploads = drawings.filter(
-    (d) => new Date(d.createdAt).toISOString().split("T")[0] === todayStr
-  ).length
-  const pendingDrawings = drawings.filter((d) => d.status === "pending").length
+  const pendingLeaves = leaves.filter((leave) => leave.status === "pending").length
+
+  const handleLeaveDecision = async (id, status, remarks) => {
+    try {
+      await api.put(`/leaves/${id}/decision`, { status, remarks })
+      toast.success(`Leave request ${status}`)
+      fetchAll()
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not update leave request")
+    }
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -102,7 +109,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <NotificationBell employees={employees} drawings={drawings} onGoTo={setActiveTab} />
+          <NotificationBell employees={employees} leaves={leaves} onGoTo={setActiveTab} />
           <Button variant="outline" onClick={handleLogout}>Logout</Button>
         </div>
       </header>
@@ -111,12 +118,8 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard label="Total Employees" value={totalEmployees} />
           <StatCard label="Pending Approvals" value={pendingApprovals} accent={pendingApprovals > 0} />
-          <StatCard label="Today's Uploads" value={todaysUploads} />
-          <StatCard
-            label="Pending Drawing Approvals"
-            value={pendingDrawings}
-            accent={pendingDrawings > 0}
-          />
+          <StatCard label="Today's Attendance" value={attendanceToday.length} />
+          <StatCard label="Pending Leaves" value={pendingLeaves} accent={pendingLeaves > 0} />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
@@ -127,14 +130,11 @@ export default function AdminDashboard() {
             >
               Employees
             </TabsTrigger>
-            <TabsTrigger
-              value="drawings"
-              className="rounded-full transition-all duration-200 data-[state=active]:bg-brand data-[state=active]:text-white data-[state=active]:shadow-sm"
-            >
-              Drawings
-            </TabsTrigger>
               <TabsTrigger value="attendance" className="rounded-full transition-all duration-200 data-[state=active]:bg-brand data-[state=active]:text-white data-[state=active]:shadow-sm">
               Attendance
+            </TabsTrigger>
+            <TabsTrigger value="leave" className="rounded-full transition-all duration-200 data-[state=active]:bg-brand data-[state=active]:text-white data-[state=active]:shadow-sm">
+              Leave Requests
             </TabsTrigger>
           </TabsList>
 
@@ -150,12 +150,6 @@ export default function AdminDashboard() {
             />
           </TabsContent>
 
-          <TabsContent
-            value="drawings"
-            className="animate-in fade-in-0 slide-in-from-bottom-1 duration-300"
-          >
-            <DrawingsTab drawings={drawings} loading={loading} onRefresh={fetchAll} />
-          </TabsContent>
           <TabsContent value="attendance" className="animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
             <AttendanceTab
               attendance={attendanceToday}
@@ -164,6 +158,9 @@ export default function AdminDashboard() {
             />
         </TabsContent>
         </Tabs>
+        {activeTab === "leave" && (
+          <LeaveTab leaves={leaves} loading={loading} onDecision={handleLeaveDecision} />
+        )}
       </main>
     </div>
   )

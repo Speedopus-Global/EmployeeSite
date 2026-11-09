@@ -7,24 +7,20 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 
 export default function NotificationBell({
   employees,
-  drawings,
+  leaves = [],
   onGoTo,
 }) {
   const pendingEmployees = employees
     .filter((e) => e.status === "pending")
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
-  const pendingDrawings = drawings
-    .filter((d) => d.status === "pending")
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-
-  const total = pendingEmployees.length + pendingDrawings.length
+  const pendingLeaves = leaves.filter((leave) => leave.status === "pending")
+  const total = pendingEmployees.length + pendingLeaves.length
 
   return (
     <DropdownMenu>
@@ -70,35 +66,24 @@ export default function NotificationBell({
                 ))}
               </DropdownMenuGroup>
             )}
-
-            {pendingDrawings.length > 0 && (
-              <>
-                {pendingEmployees.length > 0 && (
-                  <DropdownMenuSeparator />
-                )}
-
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>
-                    Pending Drawings ({pendingDrawings.length})
-                  </DropdownMenuLabel>
-
-                  {pendingDrawings.slice(0, 5).map((d) => (
-                    <DropdownMenuItem
-                      key={d._id}
-                      onClick={() => onGoTo("drawings")}
-                      className="flex flex-col items-start"
-                    >
-                      <span className="font-medium">
-                        {d.projectName}
-                      </span>
-
-                      <span className="text-xs text-muted-foreground">
-                        {d.employee?.name} · {d.drawingNumber}
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuGroup>
-              </>
+            {pendingLeaves.length > 0 && (
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>
+                  Leave Requests ({pendingLeaves.length})
+                </DropdownMenuLabel>
+                {pendingLeaves.slice(0, 5).map((leave) => (
+                  <DropdownMenuItem
+                    key={leave._id}
+                    onClick={() => onGoTo("leave")}
+                    className="flex flex-col items-start"
+                  >
+                    <span className="font-medium">{leave.employee?.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {leave.leaveType} leave · {new Date(leave.startDate).toLocaleDateString()}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
             )}
           </>
         )}

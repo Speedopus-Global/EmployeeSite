@@ -3,6 +3,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
+import { getAttendanceDurations } from "@/lib/attendance"
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select"
@@ -68,9 +70,15 @@ export default function AttendanceTab({ attendance, employees, loading }) {
 
   const employeeStats = useMemo(() => {
     const totalDays = employeeHistory.length
-    const totalHours = employeeHistory.reduce((sum, r) => sum + (r.workingHours || 0), 0)
-    const avgHours = totalDays > 0 ? (totalHours / totalDays).toFixed(1) : 0
-    return { totalDays, totalHours: totalHours.toFixed(1), avgHours }
+    const totalHours = employeeHistory.reduce((sum, r) => sum + getAttendanceDurations(r).workSeconds, 0) / 3600
+    const totalBreaks = employeeHistory.reduce((sum, r) => sum + getAttendanceDurations(r).breakSeconds, 0) / 3600
+    const avgHours = totalDays > 0 ? (totalHours / totalDays).toFixed(2) : 0
+    return {
+      totalDays,
+      totalHours: totalHours.toFixed(1),
+      totalBreaks: totalBreaks.toFixed(1),
+      avgHours,
+    }
   }, [employeeHistory])
 
   return (
@@ -130,7 +138,9 @@ export default function AttendanceTab({ attendance, employees, loading }) {
                 <TableHead>Date</TableHead>
                 <TableHead>Login</TableHead>
                 <TableHead>Logout</TableHead>
-                <TableHead>Duration</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Breaks</TableHead>
+                <TableHead>Work Duration</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -146,7 +156,27 @@ export default function AttendanceTab({ attendance, employees, loading }) {
                   <TableCell>{formatDate(a.date)}</TableCell>
                   <TableCell>{formatTime(a.loginTime)}</TableCell>
                   <TableCell>{formatTime(a.logoutTime)}</TableCell>
-                  <TableCell>{formatDuration(a.workingHours)}</TableCell>
+                  <TableCell>
+                    {a.logoutTime ? (
+                      <Badge variant="secondary">Completed</Badge>
+                    ) : a.isPaused ? (
+                      <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                        On Break
+                      </Badge>
+                    ) : (
+                      <Badge variant="default" className="bg-emerald-600 hover:bg-emerald-600 text-white">
+                        Working
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {getAttendanceDurations(a).breakSeconds > 0
+                      ? formatDuration(getAttendanceDurations(a).breakSeconds / 3600)
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {formatDuration(getAttendanceDurations(a).workSeconds / 3600)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -160,14 +190,18 @@ export default function AttendanceTab({ attendance, employees, loading }) {
             <DialogTitle>{selectedEmployee?.name}'s Attendance History</DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-lg border p-3 text-center">
               <p className="text-xs text-muted-foreground">Days Present</p>
               <p className="text-xl font-semibold">{employeeStats.totalDays}</p>
             </div>
             <div className="rounded-lg border p-3 text-center">
-              <p className="text-xs text-muted-foreground">Total Hours</p>
+              <p className="text-xs text-muted-foreground">Work Hours</p>
               <p className="text-xl font-semibold">{employeeStats.totalHours}h</p>
+            </div>
+            <div className="rounded-lg border p-3 text-center">
+              <p className="text-xs text-muted-foreground">Break Taken</p>
+              <p className="text-xl font-semibold text-amber-600 dark:text-amber-400">{employeeStats.totalBreaks}h</p>
             </div>
             <div className="rounded-lg border p-3 text-center">
               <p className="text-xs text-muted-foreground">Avg Hours/Day</p>
@@ -182,7 +216,8 @@ export default function AttendanceTab({ attendance, employees, loading }) {
                   <TableHead>Date</TableHead>
                   <TableHead>Login</TableHead>
                   <TableHead>Logout</TableHead>
-                  <TableHead>Duration</TableHead>
+                  <TableHead>Break</TableHead>
+                  <TableHead>Work Duration</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -191,7 +226,8 @@ export default function AttendanceTab({ attendance, employees, loading }) {
                     <TableCell>{formatDate(a.date)}</TableCell>
                     <TableCell>{formatTime(a.loginTime)}</TableCell>
                     <TableCell>{formatTime(a.logoutTime)}</TableCell>
-                    <TableCell>{formatDuration(a.workingHours)}</TableCell>
+                    <TableCell>{a.totalBreakHours > 0 ? formatDuration(a.totalBreakHours) : "—"}</TableCell>
+                    <TableCell className="font-medium">{formatDuration(a.workingHours)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
