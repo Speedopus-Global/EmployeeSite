@@ -7,12 +7,21 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true) // true while checking existing session
 
+  const loadProfilePicture = async (sessionUser) => {
+    try {
+      const profileResponse = await api.get("/profile/me")
+      return { ...sessionUser, profilePicture: profileResponse.data.profilePicture || "" }
+    } catch {
+      return sessionUser
+    }
+  }
+
   // On app load, check if a valid session cookie already exists
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const res = await api.get("/auth/me")
-        setUser(res.data.user)
+        setUser(await loadProfilePicture(res.data.user))
       } catch (err) {
         setUser(null)
       } finally {
@@ -24,8 +33,9 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await api.post("/auth/login", { email, password })
-    setUser(res.data.user)
-    return res.data.user
+    const sessionUser = await loadProfilePicture(res.data.user)
+    setUser(sessionUser)
+    return sessionUser
   }
 
   const register = async (name, email, password) => {
@@ -39,9 +49,9 @@ export function AuthProvider({ children }) {
   }
 
   const refreshUser = async () => {
-  const res = await api.get("/auth/me")
-  setUser(res.data.user)
-}
+    const res = await api.get("/auth/me")
+    setUser(await loadProfilePicture(res.data.user))
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>

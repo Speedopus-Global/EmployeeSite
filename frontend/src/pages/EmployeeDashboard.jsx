@@ -5,12 +5,14 @@ import Logo from "@/components/Logo"
 import DashboardTab from "@/components/employee/DashboardTab"
 import AttendanceTab from "@/components/employee/employee-AttendanceTab"
 import ProfileTab from "@/components/employee/ProfileTab"
+import LeavePage from "@/components/employee/LeavePage"
 import { Button } from "@/components/ui/button"
-import { LayoutGrid, Clock, UserRound, LogOut, Menu, X } from "lucide-react"
+import { LayoutGrid, Clock, UserRound, CalendarDays, LogOut, Menu } from "lucide-react"
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
   { id: "attendance", label: "My Attendance", icon: Clock },
+  { id: "leave", label: "Apply Leave", icon: CalendarDays },
   { id: "profile", label: "Profile", icon: UserRound },
 ]
 
@@ -21,6 +23,7 @@ export default function EmployeeDashboard() {
   const navigate = useNavigate()
 
   const handleLogout = async () => {
+    setMobileNavOpen(false)
     await logout()
     navigate("/login")
   }
@@ -46,10 +49,12 @@ export default function EmployeeDashboard() {
         {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
+            type="button"
             onClick={() => {
               setActiveTab(id)
               setMobileNavOpen(false)
             }}
+            aria-current={activeTab === id ? "page" : undefined}
             className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
               activeTab === id
                 ? "bg-brand text-white"
@@ -64,20 +69,20 @@ export default function EmployeeDashboard() {
 
       <div className="border-t px-3 py-4">
         <div className="mb-3 flex items-center gap-3 rounded-lg px-2 py-2">
-        <div className="h-9 w-9 overflow-hidden rounded-full bg-brand/10">
-          {user?.profilePicture ? (
-            <img src={user.profilePicture} alt={user.name} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-brand">
-              {initials || "U"}
-            </div>
-          )}
+          <div className="h-9 w-9 overflow-hidden rounded-full bg-brand/10">
+            {user?.profilePicture ? (
+              <img src={user.profilePicture} alt={user.name} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-brand">
+                {initials || "U"}
+              </div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium leading-none">{user?.name}</p>
+            <p className="mt-1 truncate text-xs text-muted-foreground">{user?.email}</p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium leading-none">{user?.name}</p>
-          <p className="mt-1 truncate text-xs text-muted-foreground">{user?.email}</p>
-        </div>
-      </div>
         <Button
           variant="outline"
           className="w-full justify-start gap-2"
@@ -93,7 +98,7 @@ export default function EmployeeDashboard() {
   return (
     <div className="flex min-h-screen bg-muted/30">
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r bg-background lg:block">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r bg-background lg:block">
         {SidebarContent}
       </aside>
 
@@ -128,15 +133,17 @@ export default function EmployeeDashboard() {
               {NAV_ITEMS.find((n) => n.id === activeTab)?.label}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {activeTab === "dashboard" && "Overview of your drawings and activity"}
+              {activeTab === "dashboard" && "Overview of your attendance and activity"}
               {activeTab === "attendance" && "Your logged hours and attendance history"}
               {activeTab === "profile" && "Manage your personal information"}
+              {activeTab === "leave" && "Apply for leave and track your requests"}
             </p>
           </div>
 
           {activeTab === "dashboard" && <DashboardTab />}
           {activeTab === "attendance" && <AttendanceTab />}
           {activeTab === "profile" && <ProfileTab />}
+          {activeTab === "leave" && <LeavePage />}
         </main>
       </div>
     </div>
