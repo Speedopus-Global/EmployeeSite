@@ -1,6 +1,8 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { toast } from "sonner"
 import api from "@/lib/axios"
+import { getAttendanceDurations } from "@/lib/attendance"
+import AttendanceButton from "@/components/employee/AttendanceButton"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -11,15 +13,17 @@ import {
 } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
-
 const chartConfig = {
   hours: {
-    label: "Duration",
+    label: "Work time",
     color: "#2400FF",
+  },
+  breaks: {
+    label: "Break time",
+    color: "#f59e0b",
   },
 }
 
-// Precise formatter — drops down to minutes, then seconds, for short durations
 function formatDurationPrecise(hours) {
   if (!hours || hours <= 0) return "0s"
 
@@ -41,7 +45,6 @@ function formatDurationPrecise(hours) {
   return remainingMinutes > 0 ? `${wholeHours}h ${remainingMinutes}m` : `${wholeHours}h`
 }
 
-// Simpler formatter for table rows — minutes/hours only, no seconds clutter
 function formatDuration(hours) {
   if (!hours || hours <= 0) return "—"
   const totalMinutes = Math.round(hours * 60)
@@ -59,19 +62,21 @@ function formatShortDate(dateStr) {
   return new Date(dateStr).toLocaleDateString([], { month: "short", day: "numeric" })
 }
 
-// Y-axis tick formatter — keeps axis labels compact (e.g. "1h", "30m")
 function formatAxisTick(hours) {
   if (hours === 0) return "0"
   if (hours < 1) return `${Math.round(hours * 60)}m`
   return `${hours}h`
 }
 
-function StatCard({ label, value }) {
+function MetricCard({ label, value, subtext, accent = false }) {
   return (
-    <Card>
+    <Card className="transition-all duration-200 hover:shadow-xs">
       <CardContent className="pt-6">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="text-2xl font-semibold">{value}</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className={`mt-1 font-mono text-2xl font-semibold tracking-tight ${accent ? "text-brand" : "text-foreground"}`}>
+          {value}
+        </p>
+        {subtext && <p className="mt-1 text-xs text-muted-foreground">{subtext}</p>}
       </CardContent>
     </Card>
   )
@@ -79,97 +84,110 @@ function StatCard({ label, value }) {
 
 export default function AttendanceTab() {
   const [records, setRecords] = useState([])
-  const [today, setToday] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [liveAttendance, setLiveAttendance] = useState(null)
 
-  useEffect(() => {
-    const fetchAttendance = async () => {
-      try {
-        const [historyRes, todayRes] = await Promise.all([
-          api.get("/attendance/me"),
-          api.get("/attendance/today"),
-        ])
-        setRecords(historyRes.data)
-        setToday(todayRes.data)
-      } catch (err) {
-        toast.error("Failed to load attendance history")
-      } finally {
-        setLoading(false)
-      }
+  const fetchAttendance = useCallback(async () => {
+    try {
+      const res = await api.get("/attendance/me")
+      setRecords(res.data)
+    } catch {
+      toast.error("Failed to load attendance history")
+    } finally {
+      setLoading(false)
     }
-    fetchAttendance()
   }, [])
 
-
-  function LiveSessionCard({ loginTime }) {
-  const [elapsed, setElapsed] = useState(0)
-
   useEffect(() => {
-    if (!loginTime) return
-    const tick = () => {
-      setElapsed(Math.floor((Date.now() - new Date(loginTime).getTime()) / 1000))
-    }
-    tick()
-    const interval = setInterval(tick, 1000)
-    return () => clearInterval(interval)
-  }, [loginTime])
+    fetchAttendance()
+  }, [fetchAttendance])
 
-  if (!loginTime) return null
-
-  const h = Math.floor(elapsed / 3600)
-  const m = Math.floor((elapsed % 3600) / 60)
-  const s = elapsed % 60
-  const display = h > 0
-    ? `${h}h ${m}m ${s}s`
-    : m > 0
-    ? `${m}m ${s}s`
-    : `${s}s`
-
-  return (
-    <Card className="border-brand/30 bg-brand/[0.03]">
-      <CardContent className="flex items-center justify-between pt-6">
-        <div>
-          <p className="text-sm text-muted-foreground">Current Session</p>
-          <p className="text-2xl font-semibold text-brand">{display}</p>
-        </div>
-        <div className="flex h-2.5 w-2.5 animate-pulse rounded-full bg-brand" />
-      </CardContent>
-    </Card>
-  )
-}
+  const handleTimerUpdate = useCallback((times, record) => {
+    setLiveAttendance({ times, record })
+  }, [])
 
   const stats = useMemo(() => {
-    const totalDays = records.length
-    const totalHours = records.reduce((sum, r) => sum + (r.workingHours || 0), 0)
+    const liveRecord = liveAttendance?.record
+    const isLiveRecord = (record) =>
+      Boolean(
+        liveRecord &&
+        ((liveRecord._id && record._id === liveRecord._id) ||
+          (liveRecord.date && record.date === liveRecord.date))
+      )
+    const historicalRecords = records.filter((record) => !isLiveRecord(record))
+    const totals = historicalRecords.reduce(
+      (sum, record) => {
+        const durations = getAttendanceDurations(record)
+        return {
+          workSeconds: sum.workSeconds + durations.workSeconds,
+          breakSeconds: sum.breakSeconds + durations.breakSeconds,
+        }
+      },
+      { workSeconds: 0, breakSeconds: 0 }
+    )
+
+    if (liveRecord) {
+      totals.workSeconds += liveAttendance.times.workSeconds
+      totals.breakSeconds += liveAttendance.times.totalBreakSeconds
+    }
+
+    const totalDays = historicalRecords.length + (liveRecord ? 1 : 0)
+    const totalHours = totals.workSeconds / 3600
+    const totalBreaks = totals.breakSeconds / 3600
     const avgHours = totalDays > 0 ? totalHours / totalDays : 0
     return {
       totalDays,
       totalHoursLabel: formatDurationPrecise(totalHours),
+      totalBreaksLabel: formatDurationPrecise(totalBreaks),
       avgHoursLabel: formatDurationPrecise(avgHours),
     }
-  }, [records])
-
-
+  }, [records, liveAttendance])
 
   // Chart wants ascending chronological order, most recent 14 days
   const chartData = useMemo(() => {
-    return [...records]
+    const liveRecordId = liveAttendance?.record?._id
+    const liveRecordDate = liveAttendance?.record?.date
+    const isLiveRecord = (record) =>
+      Boolean(
+        liveAttendance?.record &&
+        (record._id === liveRecordId || record.date === liveRecordDate)
+      )
+    const chartRecords = [...records]
+    if (liveAttendance?.record && !chartRecords.some(isLiveRecord)) {
+      chartRecords.push(liveAttendance.record)
+    }
+
+    return chartRecords
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .slice(-14)
       .map((r) => ({
         date: formatShortDate(r.date),
-        hours: r.workingHours || 0,
+        hours: isLiveRecord(r)
+          ? liveAttendance.times.workSeconds / 3600
+          : getAttendanceDurations(r).workSeconds / 3600,
+        breaks: isLiveRecord(r)
+          ? liveAttendance.times.totalBreakSeconds / 3600
+          : getAttendanceDurations(r).breakSeconds / 3600,
       }))
-  }, [records])
+  }, [records, liveAttendance])
 
-  const sortedRecords = useMemo(
-    () => [...records].sort((a, b) => new Date(b.date) - new Date(a.date)),
-    [records]
-  )
+  const sortedRecords = useMemo(() => {
+    const liveRecordId = liveAttendance?.record?._id
+    return [...records]
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .map((record) =>
+        record._id === liveRecordId
+          ? { ...record, ...liveAttendance.record, ...liveAttendance.times }
+          : record
+      )
+  }, [records, liveAttendance])
+
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-3 gap-4">
+        <Skeleton className="h-24 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
@@ -181,25 +199,44 @@ export default function AttendanceTab() {
 
   return (
     <div className="space-y-6">
-        
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {today?.loginTime && !today?.logoutTime && (
-        <LiveSessionCard loginTime={today.loginTime} />
-        )}
-        <StatCard label="Days Present" value={stats.totalDays} />
-        <StatCard label="Total Time Logged" value={stats.totalHoursLabel} />
-        <StatCard label="Average / Day" value={stats.avgHoursLabel} />
+      {/* Live Shift Tracker Bar */}
+      <AttendanceButton
+        onAttendanceUpdate={fetchAttendance}
+        onTimerUpdate={handleTimerUpdate}
+      />
+
+      {/* 4 Core Summary Metric Cards */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <MetricCard label="Days Present" value={stats.totalDays} subtext="Total recorded shifts" />
+        <MetricCard label="Total Work Time" value={stats.totalHoursLabel} accent subtext="All completed shifts" />
+        <MetricCard label="Total Breaks" value={stats.totalBreaksLabel} subtext="Tracked pause intervals" />
+        <MetricCard label="Average / Shift" value={stats.avgHoursLabel} subtext="Productive work time" />
       </div>
 
+      {/* Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Active Hours</CardTitle>
-          <CardDescription>Your logged time over the last 14 working days</CardDescription>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle>Daily work and break time</CardTitle>
+              <CardDescription>Compare productive work time with break time for each day</CardDescription>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground" aria-label="Chart legend">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm bg-[#2400FF]" aria-hidden="true" />
+                Work time
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" aria-hidden="true" />
+                Break time
+              </span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {chartData.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">
-              No attendance data yet.
+              No attendance data recorded yet.
             </p>
           ) : (
             <ChartContainer config={chartConfig} className="h-72 w-full">
@@ -225,20 +262,26 @@ export default function AttendanceTab() {
                   content={
                     <ChartTooltipContent
                       indicator="line"
-                      formatter={(value) => [formatDurationPrecise(value), "Duration"]}
+                      formatter={(value, name) => [
+                        formatDurationPrecise(value),
+                        name === "breaks" ? "Break time" : "Work time",
+                      ]}
                     />
                   }
                 />
                 <Bar dataKey="hours" fill="var(--color-hours)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="breaks" fill="var(--color-breaks)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ChartContainer>
           )}
         </CardContent>
       </Card>
 
+      {/* History Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Attendance History</CardTitle>
+          <CardTitle>Attendance & Breaks Log</CardTitle>
+          <CardDescription>Detailed history of daily work shifts and break durations</CardDescription>
         </CardHeader>
         <CardContent>
           {sortedRecords.length === 0 ? (
@@ -249,20 +292,47 @@ export default function AttendanceTab() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
-                    <TableHead>Login</TableHead>
-                    <TableHead>Logout</TableHead>
-                    <TableHead>Duration</TableHead>
+                    <TableHead>Clock In</TableHead>
+                    <TableHead>Clock Out</TableHead>
+                    <TableHead>Work Time</TableHead>
+                    <TableHead>Break Duration</TableHead>
+                    <TableHead className="text-right">Daily Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedRecords.map((r) => (
-                    <TableRow key={r._id}>
-                      <TableCell>{formatShortDate(r.date)}</TableCell>
+                  {sortedRecords.map((r) => {
+                        const durations = (
+                          r._id === liveAttendance?.record?._id ||
+                          r.date === liveAttendance?.record?.date
+                        )
+                          ? {
+                              workSeconds: liveAttendance.times.workSeconds,
+                              breakSeconds: liveAttendance.times.totalBreakSeconds,
+                            }
+                          : getAttendanceDurations(r)
+                      return (
+                      <TableRow key={r._id}>
+                      <TableCell className="font-medium">{formatShortDate(r.date)}</TableCell>
                       <TableCell>{formatTime(r.loginTime)}</TableCell>
                       <TableCell>{formatTime(r.logoutTime)}</TableCell>
-                      <TableCell>{formatDuration(r.workingHours)}</TableCell>
+                      <TableCell className="font-mono font-semibold text-brand">
+                        {formatDuration(durations.workSeconds / 3600)}
+                      </TableCell>
+                      <TableCell>
+                        {durations.breakSeconds > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium">
+                            {formatDuration(durations.breakSeconds / 3600)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-semibold text-foreground">
+                        {formatDuration((durations.workSeconds + durations.breakSeconds) / 3600)}
+                      </TableCell>
                     </TableRow>
-                  ))}
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>

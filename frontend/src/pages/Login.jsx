@@ -142,7 +142,7 @@ const handleMouseLeave = () => {
           </h2>
 
           <p className="max-w-sm text-sm leading-relaxed text-white/60">
-            Track attendance, submit drawings for review, and stay in sync
+            Track attendance and stay in sync
             with the team—all from a single, secure workspace.
           </p>
 
@@ -165,7 +165,7 @@ const handleMouseLeave = () => {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
                 <FileCheck2 className="h-4 w-4 text-brand" />
               </div>
-              Streamlined drawing approvals
+              Clear employee workflows
             </div>
           </div>
         </div>
